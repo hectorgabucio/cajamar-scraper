@@ -40,9 +40,7 @@ function scrapLine(line) {
     result.amount = parts[2]
 
     let hash = crypto.createHash('sha256').update(JSON.stringify(result)).digest("hex")
-
     result.id = hash
-
     return result
 }
 
@@ -76,7 +74,8 @@ function loadEnv() {
 
     const result = dotenv.config()
     if (result.error) {
-        throw result.error
+        //throw result.error
+        console.log("no env file, using config vars")
     }
 }
 
