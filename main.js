@@ -1,5 +1,61 @@
+"use strict";
 const puppeteer = require('puppeteer');
 const dotenv = require('dotenv');
+var express = require('express');
+var app = express();
+
+
+var port = process.env.PORT || 3000;
+
+
+
+const separator = '|||'
+
+
+function errorHandler(err, req, res, next) {
+    console.log(console.log(err))
+    res.status(500).send({success: false})
+}
+
+const wrapAsync = (fn) => {
+    return (req, res, next) => {
+        const fnReturn = fn(req, res, next);
+        return Promise.resolve(fnReturn).catch(next);
+    }
+};
+
+
+
+function scrapLine(line) {
+
+    let parts = line.split(separator)
+    if (parts.length !== 3) {
+        return {}
+    }
+
+    let result = {}
+    result.date = parts[0]
+    result.concept = parts[1]
+    result.amount = parts[2]
+
+    return result
+}
+
+
+app.get('/', wrapAsync(async function example(req, res) {
+    let result = await getCajamar()
+
+
+    let resFinal = result.split("\n").map((x) => {
+        return scrapLine(x)
+    })
+
+    res.status(200).send(resFinal);
+}));
+
+app.listen(port, function () {
+    console.log('Example app listening on port 3000!');
+});
 
 
 
@@ -19,12 +75,20 @@ function loadEnv() {
     }
 }
 
-(async () => {
+
+async function getCajamar() {
+
+
 
 
     loadEnv()
 
-    const options = {}
+    const options = {
+        'args': [
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+        ]
+    }
 
     /*
     const options = {
@@ -82,9 +146,8 @@ function loadEnv() {
     const movements = await frame2.evaluate(() => {
 
 
-        let result = ""
+        let result = []
         const numberCols = 3
-
         let elements = Array.from(document.querySelectorAll(".z-cell[data-title='Concepto'],.z-cell[data-title='Fecha'],.z-cell[data-title='Importe']"))
 
         elements.forEach((element, index) => {
@@ -103,7 +166,10 @@ function loadEnv() {
 
     })
 
-    console.log(movements)
-
     await browser.close();
-})();
+
+    return movements
+}
+
+
+app.use(errorHandler);
