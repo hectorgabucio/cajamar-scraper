@@ -2,6 +2,7 @@
 const puppeteer = require('puppeteer');
 const dotenv = require('dotenv');
 var express = require('express');
+const crypto = require('crypto')
 var app = express();
 
 
@@ -38,6 +39,10 @@ function scrapLine(line) {
     result.concept = parts[1]
     result.amount = parts[2]
 
+    let hash = crypto.createHash('sha256').update(JSON.stringify(result)).digest("hex")
+
+    result.id = hash
+
     return result
 }
 
@@ -54,7 +59,7 @@ app.get('/', wrapAsync(async function example(req, res) {
 }));
 
 app.listen(port, function () {
-    console.log('Example app listening on port 3000!'); 
+    console.log('Example app listening on port ' + port); 
 });
 
 
