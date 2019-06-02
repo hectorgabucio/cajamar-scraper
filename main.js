@@ -15,7 +15,7 @@ const separator = '|||'
 
 function errorHandler(err, req, res, next) {
     console.log(console.log(err))
-    res.status(500).send({success: false})
+    res.status(500).send({ success: false })
 }
 
 const wrapAsync = (fn) => {
@@ -57,7 +57,7 @@ app.get('/', wrapAsync(async function example(req, res) {
 }));
 
 app.listen(port, function () {
-    console.log('Example app listening on port ' + port); 
+    console.log('Example app listening on port ' + port);
 });
 
 
@@ -80,6 +80,26 @@ function loadEnv() {
 }
 
 
+
+
+function waitForFrame(page, frameName) {
+    let fulfill;
+    const promise = new Promise(x => fulfill = x);
+    checkFrame();
+    return promise;
+
+    function checkFrame() {
+        const frame = page.frames().find(f => f.name() === frameName);
+        if (frame)
+            fulfill(frame);
+        else
+            page.once('frameattached', checkFrame);
+    }
+}
+
+
+
+
 async function getCajamar() {
 
 
@@ -87,19 +107,25 @@ async function getCajamar() {
 
     loadEnv()
 
-    const options = {
-        'args': [
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-        ]
-    }
 
-    /*
-    const options = {
-        headless: false, args: [
-            '--start-maximized' // you can also use '--start-fullscreen'
-        ], slowMo: 150
-    }*/
+    let options = {}
+
+    if (process.env.ENVIRONMENT && process.env.ENVIRONMENT === 'local') {
+        options = {
+            headless: false, args: [
+                '--start-maximized', // you can also use '--start-fullscreen'
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ], slowMo: 150
+        }
+    } else {
+        options = {
+            'args': [
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
+        }
+    }
 
     const browser = await puppeteer.launch(options
     );
@@ -112,14 +138,10 @@ async function getCajamar() {
     await page.waitFor("#principaln1_cuentas")
     await page.click("#principaln1_cuentas")
     await page.click("a[data-id=n3_movimientos]")
-
-
-
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
+    const frame = await waitForFrame(page, 'contenido')
 
-    const frame = await page.frames().find(f => f.name() === 'contenido');
-    //console.log(frame.name())
     await frame.waitForSelector("button")
 
 
@@ -139,7 +161,7 @@ async function getCajamar() {
 
 
 
-    const frame2 = await page.frames().find(f => f.name() === 'contenido');
+    const frame2 = await waitForFrame(page, 'contenido')
     await frame2.waitForSelector(".z-column-content")
 
     await frame2.click(".z-column-content")
