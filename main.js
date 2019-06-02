@@ -3,7 +3,25 @@ const puppeteer = require('puppeteer');
 const dotenv = require('dotenv');
 var express = require('express');
 const crypto = require('crypto')
+const basicAuth = require('express-basic-auth')
 var app = express();
+
+loadEnv()
+
+function getUnauthorizedResponse(req) {
+    return req.auth
+        ? ('Credentials rejected')
+        : 'No credentials provided'
+}
+
+
+app.use(basicAuth({
+    users: {
+        'user': process.env.BASIC_PASS
+    },
+    unauthorizedResponse: getUnauthorizedResponse
+}))
+
 
 
 var port = process.env.PORT || 3000;
@@ -101,13 +119,6 @@ function waitForFrame(page, frameName) {
 
 
 async function getCajamar() {
-
-
-
-
-    loadEnv()
-
-
     let options = {}
 
     if (process.env.ENVIRONMENT && process.env.ENVIRONMENT === 'local') {
@@ -213,6 +224,5 @@ async function getCajamar() {
 
     return movements
 }
-
 
 app.use(errorHandler);
