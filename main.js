@@ -115,21 +115,39 @@ async function getCajamar() {
             headless: false, args: [
                 '--start-maximized', // you can also use '--start-fullscreen'
                 '--no-sandbox',
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox',
+                "--proxy-server='direct://'", '--proxy-bypass-list=*'
             ], slowMo: 150
         }
     } else {
         options = {
             'args': [
                 '--no-sandbox',
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox',
+                "--proxy-server='direct://'", '--proxy-bypass-list=*'
             ]
         }
     }
 
-    const browser = await puppeteer.launch(options
-    );
+    const browser = await puppeteer.launch(options);
     const page = await browser.newPage();
+
+
+
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+        if (req.resourceType() == 'font' || req.resourceType() == 'image') {
+            req.abort();
+        }
+        else {
+            req.continue();
+        }
+    })
+
+
+
+
+
     await page.goto('https://www.cajamar.es/es/comun/acceder-a-banca-electronica-reintentar/');
     await page.setViewport({ width: 1920, height: 1080 })
     await page.type("#COD_NEW3", process.env.USER)
@@ -141,7 +159,6 @@ async function getCajamar() {
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
     const frame = await waitForFrame(page, 'contenido')
-
     await frame.waitForSelector("button")
 
 
