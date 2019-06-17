@@ -12,11 +12,29 @@ interface IMovement {
     amount: string
 }
 
-function scrapLine(line: string) {
-    const parts: string[] = line.split(separator)
-    if (parts.length !== 3) {
-        return {}
+function removeDuplicates(coll: IMovement[]) {
+    const result = new Map<string, IMovement>()
+    for (const i of coll) {
+        const temp = result.get(i.id)
+
+        if (temp) {
+            temp.amount = temp.amount + i.amount
+        } else if (i.date && i.concept && i.amount) {
+            result.set(i.id, i)
+        }
     }
+
+    const resultArr = []
+
+    for (const j of result.values()) {
+        resultArr.push(j)
+    }
+
+    return resultArr
+}
+
+function scrapLine(line: string): IMovement {
+    const parts: string[] = line.split(separator)
 
     const result: IMovement = {
         id: crypto
@@ -153,5 +171,5 @@ export async function getResult() {
         return scrapLine(x)
     })
 
-    return resFinal
+    return removeDuplicates(resFinal)
 }
