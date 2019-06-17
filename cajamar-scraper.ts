@@ -9,7 +9,7 @@ interface IMovement {
     id: string
     date: string
     concept: string
-    amount: string
+    amount: number
 }
 
 function removeDuplicates(coll: IMovement[]) {
@@ -18,7 +18,11 @@ function removeDuplicates(coll: IMovement[]) {
         const temp = result.get(i.id)
 
         if (temp) {
+            console.log('temp', temp.amount)
+            console.log('i', i.amount)
+            console.log('suma', temp.amount + i.amount)
             temp.amount = temp.amount + i.amount
+            console.log('suma after', temp.amount)
         } else if (i.date && i.concept && i.amount) {
             result.set(i.id, i)
         }
@@ -36,6 +40,10 @@ function removeDuplicates(coll: IMovement[]) {
 function scrapLine(line: string): IMovement {
     const parts: string[] = line.split(separator)
 
+    if (parts[2]) {
+        parts[2] = parts[2].replace(',', '.')
+    }
+
     const result: IMovement = {
         id: crypto
             .createHash('sha256')
@@ -43,7 +51,7 @@ function scrapLine(line: string): IMovement {
             .digest('hex'),
         date: parts[0],
         concept: parts[1],
-        amount: parts[2],
+        amount: parseFloat(parts[2]),
     }
     return result
 }
