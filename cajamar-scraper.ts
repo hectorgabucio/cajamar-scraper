@@ -18,11 +18,7 @@ function removeDuplicates(coll: IMovement[]) {
         const temp = result.get(i.id)
 
         if (temp) {
-            console.log('temp', temp.amount)
-            console.log('i', i.amount)
-            console.log('suma', temp.amount + i.amount)
             temp.amount = temp.amount + i.amount
-            console.log('suma after', temp.amount)
         } else if (i.date && i.concept && i.amount) {
             result.set(i.id, i)
         }
@@ -75,7 +71,7 @@ function waitForFrame(
     }
 }
 
-export async function getResult() {
+export async function getResult(ws: any) {
     let options = {}
 
     if (process.env.ENVIRONMENT && process.env.ENVIRONMENT === 'local') {
@@ -121,11 +117,14 @@ export async function getResult() {
     await page.type('#PASS_NEW3', process.env.PASS)
     await page.click('.lnkAceptar')
     await page.waitFor('#principaln1_cuentas')
+    ws.send('10%')
     await page.click('#principaln1_cuentas')
+    ws.send('20%')
     await page.click('a[data-id=n3_movimientos]')
     page.on('console', msg => console.log('PAGE LOG:', msg.text()))
 
     const frame = await waitForFrame(page, 'contenido')
+    ws.send('30%')
     await frame.waitForSelector('button')
 
     await frame.evaluate(() => {
@@ -140,14 +139,17 @@ export async function getResult() {
     await frame.waitFor(1000)
 
     await frame.click('button')
+    ws.send('40%')
 
     const frame2 = await waitForFrame(page, 'contenido')
     await frame2.waitForSelector('.z-column-content')
 
     await frame2.click('.z-column-content')
     await frame2.waitFor('.z-icon-caret-up')
+    ws.send('60%')
     await frame2.click('.z-column-content')
     await frame2.waitFor('.z-icon-caret-down')
+    ws.send('70%')
 
     const movements = await frame2.evaluate(() => {
         let result = ''
@@ -160,9 +162,7 @@ export async function getResult() {
 
         elements.forEach((element, index) => {
             const i = index + 1
-
-            // console.log("INDEX " + i, "ELEMENT " + element.innerText + " MODULUS " + (i%(numberCols)))
-
+            
             if (i % numberCols === 0) {
                 result += element.textContent + '\n'
             } else {
@@ -172,12 +172,15 @@ export async function getResult() {
 
         return result
     })
+    ws.send('80%')
 
     await browser.close()
 
     const resFinal = movements.split('\n').map(x => {
         return scrapLine(x)
     })
+
+    ws.send('100%')
 
     return removeDuplicates(resFinal)
 }
