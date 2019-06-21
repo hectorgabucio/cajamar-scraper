@@ -98,89 +98,93 @@ export async function getResult(ws: any) {
     }
 
     const browser = await puppeteer.launch(options)
-    const page = await browser.newPage()
+    try {
+        const page = await browser.newPage()
 
-    await page.setRequestInterception(true)
-    page.on('request', req => {
-        if (req.resourceType() == 'font' || req.resourceType() == 'image') {
-            req.abort()
-        } else {
-            req.continue()
-        }
-    })
-
-    await page.goto(
-        'https://www.cajamar.es/es/comun/acceder-a-banca-electronica-reintentar/'
-    )
-    await page.setViewport({ width: 1920, height: 1080 })
-    await page.type('#COD_NEW3', process.env.USER)
-    await page.type('#PASS_NEW3', process.env.PASS)
-    await page.click('.lnkAceptar')
-    await page.waitFor('#principaln1_cuentas')
-    ws.send('10%')
-    await page.click('#principaln1_cuentas')
-    ws.send('20%')
-    await page.click('a[data-id=n3_movimientos]')
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()))
-
-    const frame = await waitForFrame(page, 'contenido')
-    ws.send('30%')
-    await frame.waitForSelector('button')
-
-    await frame.evaluate(() => {
-        // document.querySelector(".z-spinner-input").textContent = "0"
-        document.querySelector<HTMLInputElement>('.z-spinner-input').value = '0'
-    })
-
-    await frame.type('.z-spinner-input', '180')
-
-    await frame.focus('button')
-
-    await frame.waitFor(1000)
-
-    await frame.click('button')
-    ws.send('40%')
-
-    const frame2 = await waitForFrame(page, 'contenido')
-    await frame2.waitForSelector('.z-column-content')
-
-    await frame2.click('.z-column-content')
-    await frame2.waitFor('.z-icon-caret-up')
-    ws.send('60%')
-    await frame2.click('.z-column-content')
-    await frame2.waitFor('.z-icon-caret-down')
-    ws.send('70%')
-
-    const movements = await frame2.evaluate(() => {
-        let result = ''
-        const numberCols = 3
-        const elements = Array.from(
-            document.querySelectorAll(
-                ".z-cell[data-title='Concepto'],.z-cell[data-title='Fecha'],.z-cell[data-title='Importe']"
-            )
-        )
-
-        elements.forEach((element, index) => {
-            const i = index + 1
-            
-            if (i % numberCols === 0) {
-                result += element.textContent + '\n'
+        await page.setRequestInterception(true)
+        page.on('request', req => {
+            if (req.resourceType() == 'font' || req.resourceType() == 'image') {
+                req.abort()
             } else {
-                result += element.textContent + '|||'
+                req.continue()
             }
         })
 
-        return result
-    })
-    ws.send('80%')
+        await page.goto(
+            'https://www.cajamar.es/es/comun/acceder-a-banca-electronica-reintentar/'
+        )
+        await page.setViewport({ width: 1920, height: 1080 })
+        await page.type('#COD_NEW3', process.env.USER)
+        await page.type('#PASS_NEW3', process.env.PASS)
+        await page.click('.lnkAceptar')
+        await page.waitFor('#principaln1_cuentas')
+        ws.send('10%')
+        await page.click('#principaln1_cuentas')
+        ws.send('20%')
+        await page.click('a[data-id=n3_movimientos]')
+        page.on('console', msg => console.log('PAGE LOG:', msg.text()))
 
-    await browser.close()
+        const frame = await waitForFrame(page, 'contenido')
+        ws.send('30%')
+        await frame.waitForSelector('button')
 
-    const resFinal = movements.split('\n').map(x => {
-        return scrapLine(x)
-    })
+        await frame.evaluate(() => {
+            // document.querySelector(".z-spinner-input").textContent = "0"
+            document.querySelector<HTMLInputElement>('.z-spinner-input').value =
+                '0'
+        })
 
-    ws.send('100%')
+        await frame.type('.z-spinner-input', '180')
 
-    return removeDuplicates(resFinal)
+        await frame.focus('button')
+
+        await frame.waitFor(1000)
+
+        await frame.click('button')
+        ws.send('40%')
+
+        const frame2 = await waitForFrame(page, 'contenido')
+        await frame2.waitForSelector('.z-column-content')
+
+        await frame2.click('.z-column-content')
+        await frame2.waitFor('.z-icon-caret-up')
+        ws.send('60%')
+        await frame2.click('.z-column-content')
+        await frame2.waitFor('.z-icon-caret-down')
+        ws.send('70%')
+
+        const movements = await frame2.evaluate(() => {
+            let result = ''
+            const numberCols = 3
+            const elements = Array.from(
+                document.querySelectorAll(
+                    ".z-cell[data-title='Concepto'],.z-cell[data-title='Fecha'],.z-cell[data-title='Importe']"
+                )
+            )
+
+            elements.forEach((element, index) => {
+                const i = index + 1
+
+                if (i % numberCols === 0) {
+                    result += element.textContent + '\n'
+                } else {
+                    result += element.textContent + '|||'
+                }
+            })
+
+            return result
+        })
+        ws.send('80%')
+
+        const resFinal = movements.split('\n').map(x => {
+            return scrapLine(x)
+        })
+
+        ws.send('100%')
+
+        return removeDuplicates(resFinal)
+    } finally {
+        console.log('cerrando browser')
+        await browser.close()
+    }
 }
