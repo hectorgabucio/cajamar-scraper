@@ -10,6 +10,14 @@ const server = http.createServer(app)
 
 // const cajamar = require("./cajamar-scraper");
 import * as cajamar from './cajamar-scraper'
+import {
+    decrypt,
+    decryptStringWithRsaPrivateKey,
+    encrypt,
+    encryptStringWithRsaPublicKey,
+    getRSAKeys,
+    randomPass,
+} from './security'
 const port = process.env.PORT || 3000
 
 loadEnv()
@@ -80,6 +88,20 @@ function heartbeat() {
 wss.on('connection', async ws => {
     console.log('Client connected')
 
+    /*
+    const pass = randomPass()
+    const text = 'HOLA JAJAJAJAJ XD DUDE'
+
+    const aesenc = encrypt(text, pass)
+    console.log(decrypt(aesenc, pass))
+
+    const { publicKey, privateKey } = await getRSAKeys()
+
+    const encrypted = encryptStringWithRsaPublicKey('HOLA JODIO', publicKey)
+    console.log('enc', encrypted)
+
+    console.log(decryptStringWithRsaPrivateKey(encrypted, privateKey))
+*/
     const client: Client = { ws, isAlive: true }
     clients.push(client)
 
