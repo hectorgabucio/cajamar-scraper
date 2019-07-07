@@ -86,12 +86,29 @@ function heartbeat() {
     clients.find(c => c.ws === this).isAlive = true
 }
 
+function IsJsonString(str) {
+    try {
+        JSON.parse(str)
+    } catch (e) {
+        return false
+    }
+    return true
+}
+
 wss.on('connection', async ws => {
     // const { publicKey, privateKey } = await getRSAKeys()
 
-    const privateKey = process.env.PRIVATE_KEY
+    let privateKey = process.env.PRIVATE_KEY
+    if (IsJsonString(privateKey)) {
+        privateKey = JSON.parse(process.env.PRIVATE_KEY)
+    }
+
     console.log('private', privateKey)
-    const publicKey = process.env.PUBLIC_KEY
+
+    let publicKey = process.env.PUBLIC_KEY
+    if (IsJsonString(publicKey)) {
+        publicKey = JSON.parse(process.env.PUBLIC_KEY)
+    }
 
     console.log('public', publicKey)
 
