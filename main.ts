@@ -9,6 +9,7 @@ const app = express()
 const server = http.createServer(app)
 
 // const cajamar = require("./cajamar-scraper");
+import { writeFileSync } from 'fs'
 import * as cajamar from './cajamar-scraper'
 import {
     decrypt,
@@ -86,6 +87,19 @@ function heartbeat() {
 }
 
 wss.on('connection', async ws => {
+    // const { publicKey, privateKey } = await getRSAKeys()
+
+    const privateKey = process.env.PRIVATE_KEY
+    console.log('private', privateKey)
+    const publicKey = process.env.PUBLIC_KEY
+
+    console.log('public', publicKey)
+
+    const encrypted = encryptStringWithRsaPublicKey('HOLA JODIO', publicKey)
+    console.log('enc', encrypted)
+
+    console.log(decryptStringWithRsaPrivateKey(encrypted, privateKey))
+
     console.log('Client connected')
 
     /*
@@ -108,23 +122,25 @@ wss.on('connection', async ws => {
     ws.on('pong', heartbeat)
     ws.on('close', () => console.log('Client disconnected'))
 
-    try {
-        const hrstart = process.hrtime()
-        const result = await cajamar.getResult(ws)
-        const hrend = process.hrtime(hrstart)
+    ws.on('message', async data => {
+        try {
+            const hrstart = process.hrtime()
+            const result = await cajamar.getResult(ws)
+            const hrend = process.hrtime(hrstart)
 
-        console.info(
-            'Execution time (hr): %ds %dms',
-            hrend[0],
-            hrend[1] / 1000000
-        )
-        ws.send(JSON.stringify(result))
-    } catch (err) {
-        ws.send('Error')
-        console.log(err)
-    } finally {
-        ws.close()
-    }
+            console.info(
+                'Execution time (hr): %ds %dms',
+                hrend[0],
+                hrend[1] / 1000000
+            )
+            ws.send(JSON.stringify(result))
+        } catch (err) {
+            ws.send('Error')
+            console.log(err)
+        } finally {
+            ws.close()
+        }
+    })
 
     // res.status(200).send(result)
 })

@@ -71,7 +71,7 @@ export function getRSAKeys() {
         privateKeyEncoding: {
             type: 'pkcs8',
             format: 'pem',
-            cipher: 'aes-256-cbc',
+            cipher: ALGORITHM,
             passphrase: process.env.PASSPHRASE,
         },
     })
