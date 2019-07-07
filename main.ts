@@ -139,6 +139,9 @@ wss.on('connection', async ws => {
 
     ws.on('message', async data => {
         try {
+            console.log('msg', data)
+            console.log(decryptStringWithRsaPrivateKey(data, privateKey))
+
             const hrstart = process.hrtime()
             const result = await cajamar.getResult(ws)
             const hrend = process.hrtime(hrstart)
