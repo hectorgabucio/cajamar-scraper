@@ -103,17 +103,15 @@ wss.on('connection', async ws => {
         privateKey = JSON.parse(process.env.PRIVATE_KEY)
     }
 
-    console.log('private', privateKey)
-
     let publicKey = process.env.PUBLIC_KEY
     if (IsJsonString(publicKey)) {
         publicKey = JSON.parse(process.env.PUBLIC_KEY)
     }
 
-    console.log('public', publicKey)
-
-    const encrypted = encryptStringWithRsaPublicKey('HOLA JODIO', publicKey)
-    console.log('enc', encrypted)
+    const encrypted = encryptStringWithRsaPublicKey(
+        'Si aparece este mensaje, RSA está funcionando correctamente',
+        publicKey
+    )
 
     console.log(decryptStringWithRsaPrivateKey(encrypted, privateKey))
 
