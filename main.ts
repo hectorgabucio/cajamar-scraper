@@ -9,6 +9,7 @@ const app = express()
 const server = http.createServer(app)
 
 // const cajamar = require("./cajamar-scraper");
+import { createCipheriv } from 'crypto'
 import { writeFileSync } from 'fs'
 import * as cajamar from './cajamar-scraper'
 import {
@@ -140,18 +141,31 @@ wss.on('connection', async ws => {
     ws.on('message', async data => {
         try {
             console.log('msg', data)
-            console.log(decryptStringWithRsaPrivateKey(data, privateKey))
+            const payload = decryptStringWithRsaPrivateKey(data, privateKey)
+            console.log('payload', payload)
+
+            const parts = payload.split(':')
+            const iv = Buffer.from(parts.shift(), 'hex')
+            const key = Buffer.from(parts.join(':'), 'hex')
+
+            console.log('iv', iv)
+            console.log('key', key)
 
             const hrstart = process.hrtime()
             const result = await cajamar.getResult(ws)
             const hrend = process.hrtime(hrstart)
+
+            const cipher = createCipheriv('aes-256-cbc', Buffer.from(key), iv)
+            let enc = cipher.update(JSON.stringify(result))
+            enc = Buffer.concat([enc, cipher.final()])
 
             console.info(
                 'Execution time (hr): %ds %dms',
                 hrend[0],
                 hrend[1] / 1000000
             )
-            ws.send(JSON.stringify(result))
+            console.log('resultado encriptado', enc.toString('hex'))
+            ws.send(JSON.stringify({ result: enc.toString('hex') }))
         } catch (err) {
             ws.send('Error')
             console.log(err)
