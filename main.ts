@@ -12,14 +12,7 @@ const server = http.createServer(app)
 import { createCipheriv } from 'crypto'
 import { writeFileSync } from 'fs'
 import * as cajamar from './cajamar-scraper'
-import {
-    decrypt,
-    decryptStringWithRsaPrivateKey,
-    encrypt,
-    encryptStringWithRsaPublicKey,
-    getRSAKeys,
-    randomPass,
-} from './security'
+import { decryptStringWithRsaPrivateKey, encrypt } from './security'
 const port = process.env.PORT || 3000
 
 loadEnv()
@@ -129,8 +122,7 @@ wss.on('connection', async ws => {
             const result = await cajamar.getResult(ws)
             const hrend = process.hrtime(hrstart)
 
-
-            const enc = encrypt(result,key,iv)
+            const enc = encrypt(result, key, iv)
 
             console.info(
                 'Execution time (hr): %ds %dms',
