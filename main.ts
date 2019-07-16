@@ -109,29 +109,8 @@ wss.on('connection', async ws => {
         publicKey = JSON.parse(process.env.PUBLIC_KEY)
     }
 
-    const encrypted = encryptStringWithRsaPublicKey(
-        'Si aparece este mensaje, RSA está funcionando correctamente',
-        publicKey
-    )
-
-    console.log(decryptStringWithRsaPrivateKey(encrypted, privateKey))
-
     console.log('Client connected')
 
-    /*
-    const pass = randomPass()
-    const text = 'HOLA JAJAJAJAJ XD DUDE'
-
-    const aesenc = encrypt(text, pass)
-    console.log(decrypt(aesenc, pass))
-
-    const { publicKey, privateKey } = await getRSAKeys()
-
-    const encrypted = encryptStringWithRsaPublicKey('HOLA JODIO', publicKey)
-    console.log('enc', encrypted)
-
-    console.log(decryptStringWithRsaPrivateKey(encrypted, privateKey))
-*/
     const client: Client = { ws, isAlive: true }
     clients.push(client)
 
@@ -140,31 +119,24 @@ wss.on('connection', async ws => {
 
     ws.on('message', async data => {
         try {
-            console.log('msg', data)
             const payload = decryptStringWithRsaPrivateKey(data, privateKey)
-            console.log('payload', payload)
 
             const parts = payload.split(':')
             const iv = Buffer.from(parts.shift(), 'hex')
             const key = Buffer.from(parts.join(':'), 'hex')
 
-            console.log('iv', iv)
-            console.log('key', key)
-
             const hrstart = process.hrtime()
             const result = await cajamar.getResult(ws)
             const hrend = process.hrtime(hrstart)
 
-            const cipher = createCipheriv('aes-256-cbc', Buffer.from(key), iv)
-            let enc = cipher.update(JSON.stringify(result))
-            enc = Buffer.concat([enc, cipher.final()])
+
+            const enc = encrypt(result,key,iv)
 
             console.info(
                 'Execution time (hr): %ds %dms',
                 hrend[0],
                 hrend[1] / 1000000
             )
-            console.log('resultado encriptado', enc.toString('hex'))
             ws.send(JSON.stringify({ result: enc.toString('hex') }))
         } catch (err) {
             ws.send('Error')
